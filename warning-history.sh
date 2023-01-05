@@ -6,6 +6,7 @@ fi
 hash gnuplot > /dev/null
 if ! [ $? == 0 ]; then
 	sudo apt install gnuplot -y
+	sudo apt install adwaita-icon-theme-full -y
 fi
 if [ "$1" == "" ]; then
 	if [ -d .git ]; then
