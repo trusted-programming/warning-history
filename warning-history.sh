@@ -1,7 +1,11 @@
 #!/bin/bash
-hash rust-diagnostics
+hash rust-diagnostics > /dev/null
 if ! [ $? == 0 ]; then
 	cargo install rust-diagnostics
+fi
+hash gnuplot > /dev/null
+if ! [ $? == 0 ]; then
+	sudo apt install gnuplot -y
 fi
 if [ "$1" == "" ]; then
 	if [ -d .git ]; then
@@ -12,21 +16,29 @@ if [ "$1" == "" ]; then
 else
 	repo=$1
 fi
+cd $(dirname $0) > /dev/null
+p=$(pwd)
+cd - > /dev/null
 pushd $repo > /dev/null
-git tag -f original
-n=0
-rm -rf diagnosticses
-mkdir -p diagnosticses
-git log -p --reverse | grep "^commit " | cut -d" " -f2 | while read f; do
-	n=$(( n + 1 ))
-	git checkout $f
-	rust-diagnostics > $n.txt
-	if [ -d diagnostics ]; then
-		mv diagnostics diagnosticses/$n
-	else
-		mkdir -p diagnosticses/$n
-	fi
-	mv $n.txt diagnosticses/$n/counts.txt
-done
-git checkout -f original
+if [ ! -d diagnosticses ]; then
+	n=0
+	git tag -f original
+	mkdir -p diagnosticses
+	git log -p --reverse | grep "^commit " | cut -d" " -f2 | while read f; do
+		n=$(( n + 1 ))
+		git checkout $f
+		rust-diagnostics > $n.txt
+		if [ -d diagnostics ]; then
+			mv diagnostics diagnosticses/$n
+		else
+			mkdir -p diagnosticses/$n
+		fi
+		mv $n.txt diagnosticses/$n/counts.txt
+	done
+	git checkout -f original
+fi
+find diagnosticses -name "counts.txt" | while read f; do
+	echo $(basename $(dirname $f)) $(cat $f) | awk '{print $1, $8, $11}'
+done | sort -n -k1 > counts.txt
+gnuplot -p $p/warning-history.gnuplot
 popd > /dev/null
