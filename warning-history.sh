@@ -26,13 +26,15 @@ if [ ! -d diagnosticses ]; then
 	git tag -f original
 	mkdir -p diagnosticses
 	git log -p --reverse | grep "^commit " | cut -d" " -f2 | while read f; do
+		git stash
 		n=$(( n + 1 ))
 		git checkout $f
 		rust-diagnostics > $n.txt
 		if [ -d diagnostics ]; then
-			mv diagnostics diagnosticses/$n
+			mkdir -p diagnosticses/$n/$f
+			mv diagnostics diagnosticses/$n/$f/
 		else
-			mkdir -p diagnosticses/$n
+			mkdir -p diagnosticses/$n/$f/
 		fi
 		mv $n.txt diagnosticses/$n/counts.txt
 	done
