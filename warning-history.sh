@@ -23,7 +23,6 @@ cd - > /dev/null
 pushd $repo > /dev/null
 if [ ! -d diagnosticses ]; then
 	n=0
-	git tag -f original
 	mkdir -p diagnosticses
 	git log -p --reverse | grep "^commit " | cut -d" " -f2 | while read f; do
 		git stash
@@ -40,7 +39,8 @@ if [ ! -d diagnosticses ]; then
 		mv $n.txt diagnosticses/$n/counts.txt
 		mv $n-tokei.txt diagnosticses/$n/tokei.txt
 	done
-	git checkout -f original
+	git stash
+	git checkout -f main
 fi
 echo revision warning_count file_count> counts.txt
 find diagnosticses -name "counts.txt" | while read f; do
