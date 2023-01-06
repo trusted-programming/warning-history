@@ -38,8 +38,9 @@ if [ ! -d diagnosticses ]; then
 	done
 	git checkout -f original
 fi
+echo revision warning_count file_count> counts.txt
 find diagnosticses -name "counts.txt" | while read f; do
-	echo $(basename $(dirname $f)) $(cat $f) | awk '{print $1, $8, $11}'
-done | sort -n -k1 > counts.txt
+	echo $(basename $(dirname $f)) $(cat $f | grep -v "Marked warning(s) into" | awk '{print $3, $6}')
+done | sort -n -k1 >> counts.txt
 gnuplot -p $p/warning-history.gnuplot
 popd > /dev/null
