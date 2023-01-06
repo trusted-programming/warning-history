@@ -29,6 +29,7 @@ if [ ! -d diagnosticses ]; then
 		git stash
 		n=$(( n + 1 ))
 		git checkout $f
+		tokei -t=Rust src > $n-tokei.txt 
 		rust-diagnostics > $n.txt
 		if [ -d diagnostics ]; then
 			mkdir -p diagnosticses/$n/$f
@@ -37,12 +38,15 @@ if [ ! -d diagnosticses ]; then
 			mkdir -p diagnosticses/$n/$f/
 		fi
 		mv $n.txt diagnosticses/$n/counts.txt
+		mv $n-tokei.txt diagnosticses/$n/tokei.txt
 	done
 	git checkout -f original
 fi
 echo revision warning_count file_count> counts.txt
 find diagnosticses -name "counts.txt" | while read f; do
-	echo $(basename $(dirname $f)) $(cat $f | grep -v "Marked warning(s) into" | awk '{print $3, $6}')
+	echo $(basename $(dirname $f)) $(cat $f | grep -v "Marked warning(s) into" | awk '{print $3, $6}') $(cat ${f/counts/tokei} | grep " Total" | awk '{print $3}')
 done | sort -n -k1 >> counts.txt
 gnuplot -p $p/warning-history.gnuplot
+gnuplot -p $p/warning-history-files.gnuplot
+gnuplot -p $p/warning-history-LOC.gnuplot
 popd > /dev/null
