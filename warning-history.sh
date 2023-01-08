@@ -56,8 +56,10 @@ find diagnosticses -name "counts.txt" | while read f; do
 echo $(( d - 1667370179 )),$(cat $f | grep -v "previously generated" | head -1 | awk '{printf("%d,%d\n", $3, $6)}'),$(cat ${f/counts/tokei} | grep " Total" | awk '{print $3}')
 done | sort -n -k1 >> counts.csv
 grep "^\#\[Warning" diagnosticses/*/counts.txt | cut -d: -f2-4 | sort | uniq -c | sort -n
+counts=$(grep "^\#\[Warning" diagnosticses/*/counts.txt | cut -d: -f2-4 | wc -l)
+echo In total there have been $counts warnings fixed in the git history. 
 #gnuplot -p $p/warning-history.gnuplot
 #gnuplot -p $p/warning-history-files.gnuplot
 gnuplot -p $p/warning-history-LOC.gnuplot
-tar cvfj $(basename $(pwd))-warnings.tar.bz2 diagnosticses counts.csv warning-history-per-KLOC.png
+tar cfj $(basename $(pwd))-warnings.tar.bz2 diagnosticses counts.csv warning-history-per-KLOC.png
 popd > /dev/null
