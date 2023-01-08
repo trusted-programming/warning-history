@@ -59,5 +59,5 @@ grep "^\#\[Warning" diagnosticses/*/counts.txt | cut -d: -f2-4 | sort | uniq -c 
 #gnuplot -p $p/warning-history.gnuplot
 #gnuplot -p $p/warning-history-files.gnuplot
 gnuplot -p $p/warning-history-LOC.gnuplot
+tar cvfj $(basename $(pwd))-warnings.tar.bz2 diagnosticses counts.csv warning-history-per-KLOC.png
 popd > /dev/null
-
