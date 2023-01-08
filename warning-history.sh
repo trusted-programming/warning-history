@@ -42,11 +42,18 @@ if [ ! -d diagnosticses ]; then
 	git stash
 	git checkout -f main
 fi
-echo revision warning_count file_count> counts.txt
+#echo revision,warning,LOC,hash,date> counts.csv
+echo revision,date,warning,LOC> counts.csv
 find diagnosticses -name "counts.txt" | while read f; do
-	echo $(basename $(dirname $f)) $(cat $f | grep -v "Marked warning(s) into" | awk '{print $3, $6}') $(cat ${f/counts/tokei} | grep " Total" | awk '{print $3}')
-done | sort -n -k1 >> counts.txt
-gnuplot -p $p/warning-history.gnuplot
-gnuplot -p $p/warning-history-files.gnuplot
+	g=$(dirname $(dirname $f)/*/diagnostics)
+	rev=$(basename $g)
+#	d=$(git log $rev --pretty=format:'%ad' --date=iso |head -1)
+	d=$(git log $rev --pretty=format:'%at' --date=iso |head -1)
+#	echo $(basename $(dirname $f)),$(cat $f | grep -v "previously generated" | awk '{print $3, ",", $6}'),$(cat ${f/counts/tokei} | grep " Total" | awk '{print $3}'),$(basename $g),$d
+#	echo $(basename $(dirname $f)),"\""$d"\"",$(cat $f | grep -v "previously generated" | awk '{print $3, ",", $6}'),$(cat ${f/counts/tokei} | grep " Total" | awk '{print $3}')
+echo $(( d - 1667370179 )),$(cat $f | grep -v "previously generated" | awk '{print $3, ",", $6}'),$(cat ${f/counts/tokei} | grep " Total" | awk '{print $3}')
+done | sort -n -k1 >> counts.csv
+#gnuplot -p $p/warning-history.gnuplot
+#gnuplot -p $p/warning-history-files.gnuplot
 gnuplot -p $p/warning-history-LOC.gnuplot
 popd > /dev/null
