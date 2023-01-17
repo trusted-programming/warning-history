@@ -17,6 +17,9 @@ if [ "$1" == "" ]; then
 else
 	repo=$1
 fi
+rm -rf tmp
+git clone $repo/.git tmp
+repo=tmp
 cd $(dirname $0) > /dev/null
 p=$(pwd)
 cd - > /dev/null
@@ -31,7 +34,7 @@ if [ ! -d diagnosticses ]; then
 		git checkout $f
 		tokei -t=Rust src > $n-tokei.txt 
 		g=$(grep -A1 $f git.log | tail -1)
-		rust-diagnostics --patch $g --confirm > $n.txt
+		rust-diagnostics --patch $g --confirm --pair --function > $n.txt
 		if [ -d diagnostics ]; then
 			mkdir -p diagnosticses/$n/$f
 			mv diagnostics diagnosticses/$n/$f/
