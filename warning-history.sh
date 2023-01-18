@@ -17,9 +17,12 @@ if [ "$1" == "" ]; then
 else
 	repo=$1
 fi
-rm -rf tmp
-git clone $repo/.git tmp
-repo=tmp
+data=data/$(basename $repo)
+if [ ! -d $data ]; then
+	rm -rf $data
+	git clone $repo/.git $data
+fi
+repo=$data
 cd $(dirname $0) > /dev/null
 p=$(pwd)
 cd - > /dev/null
