@@ -1,5 +1,52 @@
 # warning-history
 
+This script processes the history of a source Git repository of Rust project
+in order to find out how warnings have been addressed.
+
+## Synoposis:
+```bash
+  ./warning-history.sh <path> [date]
+```
+
+### Input arguments:
+
+```
+  $path -- indicates the path to a folder of Git repository
+  $date -- indicates the date of the history since, e.g., "6 weeks ago"
+```
+
+### Outputs:
+
+As a result, it produces the following files where `$base` refers to `$(basename $path)`:
+```
+  ./data/$base/diagnostics/$base-warnings.tar.bz2 -- the tarball of the results per project
+  ./data/$base/diagnostics/warning-history-per-KLOC.png -- number of warnings and ratio of warning density per KLOC over time
+  ./data/$base/diagnostics/counts.csv -- statistics data to generate the above figure
+  ./data/$base/diagnostics/git.log -- hashes of individual versions since $date according git log 
+  ./data/$base/diagnosticses/$i where i = 1 .. n -- folder of individual version from the date of analysis as v1.
+  ./data/$base/diagnosticses/$i/$hash where $hash is the hash of vi -- folder of individual vi 
+  ./data/$base/diagnosticses/$i/$hash/counts.txt -- output from rust-diagnostics, including warning pairs
+  ./data/$base/diagnosticses/$i/$hash/counts.txt/tokei.txt -- output from tokei, counting LOC in Rust
+```
+At the end, it aggregates the individual warning pairs for CodeT5's "translate" task, and the "cs-java" sub-task.
+Specifically, we map the code hunks before fix as "cs", and the code hunks after fix as "java", e.g.,
+the warning accociated with `clippy::as_conversions` will be listed as parallel data in the following two files:
+```
+  ./[Warning(clippy::as_conversions).cs-java.txt.cs
+  ./[Warning(clippy::as_conversions).cs-java.txt.java
+```
+Overall, all these different types of warnings are aggregated into the following two files:
+```
+  ./clippy.cs-java.txt.cs
+  ./clippy.cs-java.txt.java
+```
+They are packed into the following tarball:
+```
+  ./clippy-warning-fix.tar.bz2 -- the above warning data in CodeT5 format
+```
+
+## The underlying algorithm
+
 ```
 Algorithm Minimize history of warning fixes
  Given 
@@ -34,3 +81,11 @@ Algorithm Minimize history of warning fixes
     return P
 }
 ```
+
+## Some related projects
+
+ * https://github.com/trusted-programming/rust-diagnostics
+ * https://github.com/rust-lang/clippy
+ * https://github.com/rust-lang/git-rs
+ * https://github.com/salesforce/codet5
+
