@@ -27,19 +27,23 @@
 # Specifically, we map the code hunks before fix as "cs", and the code hunks after fix as "java", e.g.,
 # the warning accociated with `clippy::as_conversions` will be listed as parallel data in the following two files:
 #
-#   [Warning(clippy::as_conversions).cs-java.txt.cs
-#   [Warning(clippy::as_conversions).cs-java.txt.java
+#   ./[Warning(clippy::as_conversions).cs-java.txt.cs
+#   ./[Warning(clippy::as_conversions).cs-java.txt.java
 #
 # Overall, all these different types of warnings are aggregated into the following two files:
 #
-#   clippy.cs-java.txt.cs
-#   clippy.cs-java.txt.java
+#   ./clippy.cs-java.txt.cs
+#   ./clippy.cs-java.txt.java
+#
+# They are packed into the following tarball:
+#   ./clippy-warning-fix.tar.bz2 -- the above warning data in CodeT5 format
 #
 
 # default value is the period of the major release cycle in Rust
 checkpoint="20 years ago"
 if [ "$2" != "" ]; then
 	checkpoint="$2"
+	dd=$(date +%s -d "$checkpoint")
 fi
 
 hash rust-diagnostics > /dev/null
@@ -76,8 +80,6 @@ ls *-tokei.txt > t.t
 if [ $? == 0 ]; then
 	m=$(ls *-tokei.txt | sed -e "s/-tokei.txt//")
 	echo resume from v$m
-else
-	echo $m
 fi
 if [ ! -d diagnosticses ] || ! [ "$m" -eq "-1" ]; then
 	n=0
@@ -105,24 +107,25 @@ if [ ! -d diagnosticses ] || ! [ "$m" -eq "-1" ]; then
 	git stash
 	git checkout -f master
 fi
-#echo revision,warning,LOC,hash,date> counts.csv
 echo date,warning,warning/file,warning/KLOC> counts.csv
-dd=$(date +%s -d "$checkpoint")
-echo $dd
+if [ "$2" == "" ]; then ## default is the Unix epoc of v1 
+	dd=$(git log $(cat git.log | head -1) --pretty=format:'%at' --date=iso | head -1)
+fi
 find diagnosticses -name "counts.txt" | while read f; do
 	g=$(basename $(dirname $f)/[a-f0-9][a-f0-9][a-f0-9]*)
 	rev=$(basename $g)
 	d=$(git log $rev --pretty=format:'%at' --date=iso |head -1)
+	# The relative time since $dd
 	# echo $(( d - dd )),$(cat $f | grep -v "previously generated" | head -1 | awk '{printf("%d,%d\n", $3, $6)}'),$(cat ${f/counts/tokei} | grep " Total" | awk '{print $3}')
+	# Alternatively, the absolute time
 	echo $d,$(cat $f | grep -v "previously generated" | head -1 | awk '{printf("%d,%d\n", $3, $6)}'),$(cat ${f/counts/tokei} | grep " Total" | awk '{print $3}')
 done | sort -t, -n -k1,1 >> counts.csv
 grep "^\#\[Warning" diagnosticses/*/counts.txt | cut -d: -f2-4 | sort | uniq -c | sort -n
 counts=$(grep "^\#\[Warning" diagnosticses/*/counts.txt | cut -d: -f2-4 | wc -l)
 echo In total there have been $counts warnings fixed in the git history. 
-#gnuplot -p $p/warning-history.gnuplot
-#gnuplot -p $p/warning-history-files.gnuplot
 gnuplot -p $p/warning-history-LOC.gnuplot
-# tar cfj $(basename $(pwd))-warnings.tar.bz2 diagnosticses counts.csv warning-history-per-KLOC.png
+# project specific tarball
+tar cfj $(basename $(pwd))-warnings.tar.bz2 diagnosticses counts.csv warning-history-per-KLOC.png
 popd > /dev/null
 rm *.fix *.warn
 cat data/*/diagnosticses/*/counts.txt | grep -v "^There are " | awk -f $p/split.awk
