@@ -35,9 +35,14 @@ END {
 	n++
 	# for (w in warnings) { print w, warnings[w] }
 	for (i=1; i<n; i++) {
-		print(old_contexts[i])> "" warning_names[i] ".warn-fix.txt.warn"
-		print(new_contexts[i])> "" warning_names[i] ".warn-fix.txt.fix"
-		print(old_contexts[i])> "clippy.warn-fix.txt.warn"
-		print(new_contexts[i])> "clippy.warn-fix.txt.fix"
+		#print(old_contexts[i])> "" warning_names[i] ".warn-fix.txt.warn"
+		#print(new_contexts[i])> "" warning_names[i] ".warn-fix.txt.fix"
+		#print(old_contexts[i])> "clippy.warn-fix.txt.warn"
+		#print(new_contexts[i])> "clippy.warn-fix.txt.fix"
+		print(old_contexts[i])> "" warning_names[i] ".cs-java.txt.cs"
+		print(new_contexts[i])> "" warning_names[i] ".cs-java.txt.java"
+		print(old_contexts[i])> "clippy.cs-java.txt.cs"
+		print(new_contexts[i])> "clippy.cs-java.txt.java"
 	}
+	print "please split clippy.cs-java-txt.[cs|java] further into train, valid, test datasets."
 }
