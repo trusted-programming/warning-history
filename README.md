@@ -85,7 +85,7 @@ Algorithm Minimize history of warning fixes
 ## Some related projects
 
  * https://github.com/trusted-programming/rust-diagnostics
- * https://github.com/rust-lang/clippy
- * https://github.com/rust-lang/git-rs
+ * https://github.com/rust-lang/rust-clippy
+ * https://github.com/rust-lang/git2-rs
  * https://github.com/salesforce/codet5
 
