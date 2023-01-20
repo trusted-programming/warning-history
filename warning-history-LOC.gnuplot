@@ -12,4 +12,4 @@ set ytics nomirror # dont show the tics on that side
 set y2label "warnings per KLOC" # label for second axis
 set terminal png size 2000,1500 enhanced font "Helvetica,20"
 set output 'warning-history-per-KLOC.png'
-plot "counts.csv" using 1:($2==0:NaN:$2) with lines, '' using 1:($2==0:NaN:$2*1000/$4) with lines axis x1y2
+plot "counts.csv" using 1:($2==0?NaN:$2) with lines, '' using 1:($2==0?NaN:$2*1000/$4) with lines axis x1y2
