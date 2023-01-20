@@ -93,7 +93,7 @@ if [ ! -d diagnosticses ] || ! [ "$m" -eq "-1" ]; then
 			git checkout $f
 			tokei -t=Rust src > $n-tokei.txt 
 			g=$(grep -A1 $f git.log | tail -1)
-			rust-diagnostics --patch $g --confirm --pair --function --single > $n.txt
+			timeout 10m rust-diagnostics --patch $g --confirm --pair --function --single > $n.txt
 			if [ -d diagnostics ]; then
 				mkdir -p diagnosticses/$n/$f
 				mv diagnostics diagnosticses/$n/$f/
@@ -126,6 +126,7 @@ echo In total there have been $counts warnings fixed in the git history.
 gnuplot -p $p/warning-history-LOC.gnuplot
 # project specific tarball
 tar cfj $(basename $(pwd))-warnings.tar.bz2 diagnosticses counts.csv warning-history-per-KLOC.png
+cargo clean
 popd > /dev/null
 rm *.fix *.warn
 cat data/*/diagnosticses/*/counts.txt | grep -v "^There are " | awk -f $p/split.awk
