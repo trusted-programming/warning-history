@@ -93,7 +93,8 @@ if [ ! -d diagnosticses ] || ! [ "$m" -eq "-1" ]; then
 			git checkout $f
 			tokei -t=Rust src > $n-tokei.txt 
 			g=$(grep -A1 $f git.log | tail -1)
-			timeout 10m rust-diagnostics --patch $g --confirm --pair --function --single > $n.txt
+			timeout 10m rust-diagnostics --patch $g --confirm --pair --function --single 
+			cat diagnostics.log > $n.txt
 			if [ -d diagnostics ]; then
 				mkdir -p diagnosticses/$n/$f
 				mv diagnostics diagnosticses/$n/$f/
