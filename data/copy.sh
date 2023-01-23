@@ -5,7 +5,9 @@ cat ../../../rust-lang/rust-counts.csv | while read a; do
    f=${a%% *}
    g=${a%%* }
    if [ -f /var/www/html/$f.png ]; then
-	echo "<li><a href='$f.png'>$f - $g</a></li>" >> $page
+	echo "<li><a href='$f.png'>$g</a></li>" >> $page
+   else 
+	echo "<li> $g -- (pending ...)</li>" >> $page
    fi
 done
 echo "</ul>" >> $page

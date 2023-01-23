@@ -40,7 +40,8 @@
 #
 
 # default value is the period of the major release cycle in Rust
-checkpoint="20 years ago"
+#checkpoint="20 years ago"
+checkpoint="12 months ago"
 if [ "$2" != "" ]; then
 	checkpoint="$2"
 	dd=$(date +%s -d "$checkpoint")
