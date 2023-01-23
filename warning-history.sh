@@ -18,12 +18,24 @@
 #   ./data/$base/diagnostics/warning-history-per-KLOC.png -- number of warnings and ratio of warning density per KLOC over time
 #   ./data/$base/diagnostics/counts.csv -- statistics data to generate the above figure
 #   ./data/$base/diagnostics/git.log -- hashes of individual versions since $date according git log 
-#   ./data/$base/diagnosticses/$i where i = 1 .. n -- folder of individual version from the date of analysis as v1.
-#   ./data/$base/diagnosticses/$i/$hash where $hash is the hash of vi -- folder of individual vi 
-#   ./data/$base/diagnosticses/$i/$hash/counts.txt -- output from rust-diagnostics, including warning pairs
-#   ./data/$base/diagnosticses/$i/$hash/counts.txt/tokei.txt -- output from tokei, counting LOC in Rust
+#   ./data/$base/diagnosticses/$hash where $hash is the hash of v_i -- folder of individual v_i 
+#   ./data/$base/diagnosticses/$hash/$i-tokei.txt -- output from tokei, counting LOC in Rust
+#   ./data/$base/diagnosticses/$hash/diagnostics/diagnostics.json -- diagnostic messages from the first run of `cargo clippy`
+#   ./data/$base/diagnosticses/$hash/diagnostics/diagnostics.log -- output from `rust-diagnostics`, including warning pairs
+#       by default: the pair is a diff patch
+#   	by the option --pair : the pair are texts before and after the patch
+#   	by the options --pair --function: the pair are functions before and after the patch
+#   	by the options --pair --function --single: the pair are functions before and after the patch which fixes a single warning
+#   	by the options --pair --function --single --location: the pair are
+#   		functions before and after the patch which fixes a single warning while
+#   		the function before is located and marked up by warning hints 
+#   	by the options --pair --function --single --location --mixed: the first
+#   		part of the pair is the function before the patch which fixes a single
+#   		warning and the function before is located and marked up by warning
+#   		hints, while the second part is the patch text
+#   ./data/$base/diagnosticses/$hash/diagnostics/src/*.rs -- output from `rust-diagnostics`, mark up Rust code with warnings
 #
-# At the end, it aggregates the individual warning pairs for CodeT5's "translate" task, and the "cs-java" sub-task.
+# At the end, it aggregates individual warning pairs for CodeT5's "translate" task, and the "cs-java" sub-task.
 # Specifically, we map the code hunks before fix as "cs", and the code hunks after fix as "java", e.g.,
 # the warning accociated with `clippy::as_conversions` will be listed as parallel data in the following two files:
 #
@@ -46,7 +58,6 @@ if [ "$2" != "" ]; then
 	checkpoint="$2"
 	dd=$(date +%s -d "$checkpoint")
 fi
-
 hash rust-diagnostics > /dev/null
 if ! [ $? == 0 ]; then
 	cargo install rust-diagnostics
@@ -69,67 +80,50 @@ data=data/$(basename $repo)
 if [ ! -d $data ]; then
 	rm -rf $data
 	git clone $repo/.git $data
-	git checkout -b master
+	main=$(ls $repo/.git/refs/heads)
+	git checkout -b $main
 fi
 repo=$data
+main=$(ls $repo/.git/refs/heads)
 cd $(dirname $0) > /dev/null
 p=$(pwd)
 cd - > /dev/null
 pushd $repo > /dev/null
-m=-1
-ls *-tokei.txt > t.t
-if [ $? == 0 ]; then
-	m=$(ls *-tokei.txt | sed -e "s/-tokei.txt//")
-	echo resume from v$m
-fi
-if [ ! -d diagnosticses ] || ! [ "$m" -eq "-1" ]; then
-	n=0
-	mkdir -p diagnosticses
-	git log -p --reverse --since="$checkpoint" | grep "^commit " | cut -d" " -f2 > git.log
-	wc git.log
-	cat git.log | while read f; do
-		n=$(( n + 1 ))
-		if [ $(( m != -1 )) ] && [ $n -ge $m ]; then
-			git stash
-			git checkout $f
-			tokei -t=Rust src > $n-tokei.txt 
-			g=$(grep -A1 $f git.log | tail -1)
-			timeout 10m rust-diagnostics --patch $g --confirm --pair --function --single 
-			cat diagnostics.log > $n.txt
-			if [ -d diagnostics ]; then
-				mkdir -p diagnosticses/$n/$f
-				mv diagnostics diagnosticses/$n/$f/
-			else
-				mkdir -p diagnosticses/$n/$f/
-			fi
-			mv $n.txt diagnosticses/$n/counts.txt
-			mv $n-tokei.txt diagnosticses/$n/tokei.txt
-		fi
-	done
-	git stash
-	git checkout -f master
-fi
+n=0
+git log -p --reverse --since="$checkpoint" | grep "^commit " | cut -d" " -f2 > git.log
+cat git.log | while read f; do
+	n=$(( n + 1 ))
+	if [ ! -d "$f" ]; then
+		git stash
+		git checkout $f
+		g=$(grep -A1 $f git.log | tail -1)
+		timeout 10m rust-diagnostics --patch $g --confirm --pair --function --single --mixed --location 
+		tokei -t=Rust src > $f/$n-tokei.txt 
+	fi
+done
+git stash
+git checkout -f $main
 echo date,warning,warning/file,warning/KLOC> counts.csv
 if [ "$2" == "" ]; then ## default is the Unix epoc of v1 
-	dd=$(git log $(cat git.log | head -1) --pretty=format:'%at' --date=iso | head -1)
+	dd=$(git log "$(cat git.log | head -1)" --pretty=format:'%at' --date=iso -- | head -1)
 fi
-find diagnosticses -name "counts.txt" | while read f; do
-	g=$(basename $(dirname $f)/[a-f0-9][a-f0-9][a-f0-9]*)
-	rev=$(basename $g)
-	d=$(git log $rev --pretty=format:'%at' --date=iso |head -1)
-	# The relative time since $dd
-	# echo $(( d - dd )),$(cat $f | grep -v "previously generated" | head -1 | awk '{printf("%d,%d\n", $3, $6)}'),$(cat ${f/counts/tokei} | grep " Total" | awk '{print $3}')
-	# Alternatively, the absolute time
-	echo $d,$(cat $f | grep -v "previously generated" | head -1 | awk '{printf("%d,%d\n", $3, $6)}'),$(cat ${f/counts/tokei} | grep " Total" | awk '{print $3}')
+n=$(wc -l git.log | cut -d" " -f1)
+for i in $(seq 1 $n); do
+	find . -name $i-tokei.txt | while read f; do 
+		rev=$(basename $(dirname $f))
+		d=$(git log $rev --pretty=format:'%at' --date=iso -- | head -1)
+		# The relative time since $dd
+		# echo $(( d - dd )),$(cat $f | grep -v "previously generated" | head -1 | awk '{printf("%d,%d\n", $3, $6)}'),$(cat ${f/counts/tokei} | grep " Total" | awk '{print $3}')
+		# Alternatively, the absolute time
+		echo $d,$(cat $rev/diagnostics/diagnostics.log | grep -v "previously generated" | head -1 | awk '{printf("%d,%d\n", $3, $6)}'),$(cat $f | grep " Total" | awk '{print $3}')
+	done
 done | sort -t, -n -k1,1 >> counts.csv
-grep "^\#\[Warning" diagnosticses/*/counts.txt | cut -d: -f2-4 | sort | uniq -c | sort -n
-counts=$(grep "^\#\[Warning" diagnosticses/*/counts.txt | cut -d: -f2-4 | wc -l)
+find . -name diagnostics.log | xargs cat | grep "^\#\[Warning" | cut -d: -f1-4 | sort | uniq -c | sort -n
+counts=$(find . -name diagnostics.log | xargs cat | grep "^\#\[Warning" | cut -d: -f1-4 | wc -l)
 echo In total there have been $counts warnings fixed in the git history. 
 gnuplot -p $p/warning-history-LOC.gnuplot
-# project specific tarball
-tar cfj $(basename $(pwd))-warnings.tar.bz2 diagnosticses counts.csv warning-history-per-KLOC.png
 cargo clean
 popd > /dev/null
-rm *.fix *.warn
-cat data/*/diagnosticses/*/counts.txt | grep -v "^There are " | awk -f $p/split.awk
+rm *.cs *.java
+find . -name diagnostics.log | xargs cat | grep -v "^There are " | awk -f $p/split.awk
 tar cfj clippy-warning-fix.tar.bz2 *.cs *.java
