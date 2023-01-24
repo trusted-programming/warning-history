@@ -1,3 +1,11 @@
+for d in data/*; do
+  if [ -f $d/counts.csv ]; then
+	  cd $d > /dev/null
+	  gnuplot ../../warning-history-LOC.gnuplot
+	  sudo cp warning-history-per-KLOC.png /var/www/html/
+	  cd - > /dev/null
+  fi
+done
 find data -name diagnostics.log | xargs cat | grep -v "^There are" | awk -f split.awk 
 wc *.java | sort -n -k1 -r | head -20
 echo number of warnings, top 20 types of warning > clippy-warning-fix-count.csv
