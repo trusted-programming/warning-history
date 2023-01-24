@@ -18,10 +18,10 @@
 #   ./data/$base/diagnostics/warning-history-per-KLOC.png -- number of warnings and ratio of warning density per KLOC over time
 #   ./data/$base/diagnostics/counts.csv -- statistics data to generate the above figure
 #   ./data/$base/diagnostics/git.log -- hashes of individual versions since $date according git log 
-#   ./data/$base/diagnosticses/$hash where $hash is the hash of v_i -- folder of individual v_i 
-#   ./data/$base/diagnosticses/$hash/$i-tokei.txt -- output from tokei, counting LOC in Rust
-#   ./data/$base/diagnosticses/$hash/diagnostics/diagnostics.json -- diagnostic messages from the first run of `cargo clippy`
-#   ./data/$base/diagnosticses/$hash/diagnostics/diagnostics.log -- output from `rust-diagnostics`, including warning pairs
+#   ./data/$base/diagnostics/$hash where $hash is the hash of v_i -- folder of individual v_i 
+#   ./data/$base/diagnostics/$hash/tokei.txt -- output from tokei, counting LOC in Rust
+#   ./data/$base/diagnostics/$hash/diagnostics.json -- diagnostic messages from the first run of `cargo clippy`
+#   ./data/$base/diagnostics/$hash/diagnostics.log -- output from `rust-diagnostics`, including warning pairs
 #       by default: the pair is a diff patch
 #   	by the option --pair : the pair are texts before and after the patch
 #   	by the options --pair --function: the pair are functions before and after the patch
@@ -33,7 +33,7 @@
 #   		part of the pair is the function before the patch which fixes a single
 #   		warning and the function before is located and marked up by warning
 #   		hints, while the second part is the patch text
-#   ./data/$base/diagnosticses/$hash/diagnostics/src/*.rs -- output from `rust-diagnostics`, mark up Rust code with warnings
+#   ./data/$base/diagnostics/$hash/src/*.rs -- output from `rust-diagnostics`, mark up Rust code with warnings
 #
 # At the end, it aggregates individual warning pairs for CodeT5's "translate" task, and the "cs-java" sub-task.
 # Specifically, we map the code hunks before fix as "cs", and the code hunks after fix as "java", e.g.,
@@ -56,7 +56,6 @@
 checkpoint="12 months ago"
 if [ "$2" != "" ]; then
 	checkpoint="$2"
-	dd=$(date +%s -d "$checkpoint")
 fi
 hash rust-diagnostics > /dev/null
 if ! [ $? == 0 ]; then
@@ -82,6 +81,10 @@ if [ ! -d $data ]; then
 	git clone $repo/.git $data
 	main=$(ls $repo/.git/refs/heads)
 	git checkout -b $main
+else
+	cd $data
+	git pull
+	cd -
 fi
 repo=$data
 main=$(ls $repo/.git/refs/heads)
@@ -89,34 +92,22 @@ cd $(dirname $0) > /dev/null
 p=$(pwd)
 cd - > /dev/null
 pushd $repo > /dev/null
-n=0
 git log -p --reverse --since="$checkpoint" | grep "^commit " | cut -d" " -f2 > git.log
 cat git.log | while read f; do
-	n=$(( n + 1 ))
-	if [ ! -d "$f" ]; then
+	if [ ! -f "diagnostics/$f/tokei.txt" ]; then
 		git stash
 		git checkout $f
 		g=$(grep -A1 $f git.log | tail -1)
 		timeout 10m rust-diagnostics --patch $g --confirm --pair --function --single --mixed --location 
-		tokei -t=Rust src > $f/$n-tokei.txt 
+		tokei -t=Rust src > diagnostics/$f/tokei.txt 
 	fi
 done
 git stash
 git checkout -f $main
 echo date,warning,warning/file,warning/KLOC> counts.csv
-if [ "$2" == "" ]; then ## default is the Unix epoc of v1 
-	dd=$(git log "$(cat git.log | head -1)" --pretty=format:'%at' --date=iso -- | head -1)
-fi
-n=$(wc -l git.log | cut -d" " -f1)
-for i in $(seq 1 $n); do
-	find . -name $i-tokei.txt | while read f; do 
-		rev=$(basename $(dirname $f))
-		d=$(git log $rev --pretty=format:'%at' --date=iso -- | head -1)
-		# The relative time since $dd
-		# echo $(( d - dd )),$(cat $f | grep -v "previously generated" | head -1 | awk '{printf("%d,%d\n", $3, $6)}'),$(cat ${f/counts/tokei} | grep " Total" | awk '{print $3}')
-		# Alternatively, the absolute time
-		echo $d,$(cat $rev/diagnostics/diagnostics.log | grep -v "previously generated" | head -1 | awk '{printf("%d,%d\n", $3, $6)}'),$(cat $f | grep " Total" | awk '{print $3}')
-	done
+cat git.log | while read rev; do 
+	d=$(git log $rev --pretty=format:'%at' --date=iso -- | head -1)
+	echo $d,$(cat diagnostics/$rev/diagnostics.log | grep -v "previously generated" | head -1 | awk '{printf("%d,%d\n", $3, $6)}'),$(cat diagnostics/$rev/tokei.txt | grep " Total" | awk '{print $3}')
 done | sort -t, -n -k1,1 >> counts.csv
 find . -name diagnostics.log | xargs cat | grep "^\#\[Warning" | cut -d: -f1-4 | sort | uniq -c | sort -n
 counts=$(find . -name diagnostics.log | xargs cat | grep "^\#\[Warning" | cut -d: -f1-4 | wc -l)
