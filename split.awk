@@ -22,9 +22,9 @@ BEGIN {
 }
 ! /^#\[Warning/ && ! /^=== 19a3477889393ea2cdd0edcb5e6ab30c ===/ {
 	if (before) {
-		old_context=old_context $0 
+		old_context=old_context " " $0 
 	} else {
-		new_context=new_context $0
+		new_context=new_context " " $0
 	}
 }
 
