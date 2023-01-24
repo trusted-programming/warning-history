@@ -1,8 +1,9 @@
 for d in data/*; do
   if [ -f $d/counts.csv ]; then
 	  cd $d > /dev/null
+	  e=$(basename $d)
 	  gnuplot ../../warning-history-LOC.gnuplot
-	  sudo cp warning-history-per-KLOC.png /var/www/html/
+	  sudo cp warning-history-per-KLOC.png /var/www/html/$e.png
 	  cd - > /dev/null
   fi
 done

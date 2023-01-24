@@ -7,7 +7,7 @@ set xtics rotate
 set yrange [0:*]
 set datafile separator ','
 set key autotitle columnhead # use the first line as title
-set terminal png size 720, 720 font "Helvetica,8"
+set terminal png size 720, 480 font "Helvetica,8"
 set xlabel "manually fixed warning types"
 set ylabel "number of warnings"
 set boxwidth 1
