@@ -1,4 +1,11 @@
-for d in data/*; do
+if [ "$1" == "" ]; then
+	data=data
+	split=split
+else
+	data=$1
+	split=split1
+fi
+for d in $data/*; do
   if [ -f $d/counts.csv ]; then
 	  cd $d > /dev/null
 	  e=$(basename $d)
@@ -7,7 +14,7 @@ for d in data/*; do
 	  cd - > /dev/null
   fi
 done
-find data -name diagnostics.log | xargs cat | grep -v "^There are" | awk -f split.awk 
+find $data -name diagnostics.log | xargs cat | grep -v "^There are" | awk -f $split.awk 
 wc *.java | sort -n -k1 -r | head -20
 echo number of warnings, top 20 types of warning > clippy-warning-fix-count.csv
 wc -l *.java | sort -n -k1 -r | head -20 | grep -v clippy.cs | grep -v total | \
@@ -16,7 +23,7 @@ wc -l *.java | sort -n -k1 -r | head -20 | grep -v clippy.cs | grep -v total | \
 gnuplot clippy-warning-fixes.gnuplot
 #sudo cp clippy-warning-fixes.png /var/www/html
 #sudo cp clippy-warning-fix-count.csv /var/www/html
-cd data
+cd $data
 sudo sh copy.sh
 sudo sh copy.sh
 cd -
