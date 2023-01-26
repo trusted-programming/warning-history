@@ -1,6 +1,6 @@
 # warning-history
 
-This script processes the history of a source Git repository of Rust project
+This script processes the history of a source Git repository of Rust projects
 in order to find out how warnings have been addressed.
 
 ## Synoposis:
