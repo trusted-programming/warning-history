@@ -31,5 +31,5 @@ cd $data
 sudo sh copy.sh
 sudo sh copy.sh
 cd -
-tar cvfj clippy-warning-fix-function.tar.bz2 clip-warning-fixes-function* *.cs *.java
-sudo cp clippy-warning-fix-function.tar.bz2 /var/www/html
+tar cvfj clippy-warning-fixes-function.tar.bz2 clippy-warning-fixes-function.csv *.cs *.java
+sudo cp clippy-warning-fixes-function.tar.bz2 /var/www/html
