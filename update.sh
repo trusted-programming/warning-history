@@ -17,12 +17,13 @@ done
 find $data -name diagnostics.log | xargs cat | grep -v "^There are" | awk -f $split.awk 
 ls *.cs | while read f; do 
 	echo $(grep "^##\[Warning(" $f | wc -l) $f
-done | sort -n -k1 -r | head -20
-echo number of warnings, top 20 types of warning > clippy-warning-fix-count.csv
+done | sort -n -k1 -r | grep clippy | head -20
+N=$(grep "^##\[Warning(" clippy.cs*.cs | wc -l) 
+echo number of warnings, top-20 warning types, % of total $N warnings > clippy-warning-fixes-count-function.csv
 ls *.cs | while read f; do 
-	echo $(grep "^##\[Warning(" $f | wc -l) $f
-done | sort -n -k1 -r | head -20 | grep -v clippy.cs | grep -v total | \
-	sed -e 's/\#\#\[Warning(//g' -e 's/).cs-java.txt.java//g' -e 's/^ *//g' -e 's/ /,/g' -e 's/_/-/g' \
+	echo $(grep "^##\[Warning(" $f | wc -l) $f $N
+done | sort -n -k1 -r | head -20 | grep clippy | grep -v clippy.cs | grep -v total | \
+	sed -e 's/\#\#\[Warning(//g' -e 's/).cs-java.txt.cs//g' -e 's/^ *//g' -e 's/ /,/g' -e 's/_/-/g' -e 's/clippy:://g' \
 	>> clippy-warning-fixes-count-function.csv
 gnuplot clippy-warning-fixes-function.gnuplot
 sudo cp clippy-warning-fixes-function.png /var/www/html
