@@ -55,7 +55,9 @@
 checkpoint="30 years ago"
 #checkpoint="12 months ago"
 if [ "$2" != "" ]; then
-	checkpoint="$2"
+	if [ "$2" != "tags" ]; then
+		checkpoint="$2"
+	fi
 fi
 hash rust-diagnostics > /dev/null
 if ! [ $? == 0 ]; then
@@ -92,7 +94,11 @@ cd $(dirname $0) > /dev/null
 p=$(pwd)
 cd - > /dev/null
 pushd $repo > /dev/null
-git log -p --reverse --since="$checkpoint" | grep "^commit " | cut -d" " -f2 > git.log
+if [ "$2" == "tags" ]; then
+	git for-each-ref --sort=creatordate --format '%(objectname)' refs/tags > git.log
+else
+	git log -p --reverse --since="$checkpoint" | grep "^commit " | cut -d" " -f2 > git.log
+fi
 cat git.log | while read f; do
 	if [ ! -f "diagnostics/$f/tokei.txt" ]; then
 		git stash
