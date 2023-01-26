@@ -4,7 +4,7 @@ BEGIN {
 	new_context=""
 	warning_name=""
 }
-/^#\[Warning/ {
+/^##\[Warning/ {
 	if (n>0) {
 		old_contexts[n]=old_context
 		new_contexts[n]=new_context
@@ -20,7 +20,7 @@ BEGIN {
 /^=== 19a3477889393ea2cdd0edcb5e6ab30c ===/ {
 	before=0
 }
-! /^#\[Warning/ && ! /^=== 19a3477889393ea2cdd0edcb5e6ab30c ===/ {
+! /^##\[Warning/ && ! /^=== 19a3477889393ea2cdd0edcb5e6ab30c ===/ {
 	if (before) {
 		old_context=old_context " " $0 
 	} else {
