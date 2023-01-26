@@ -84,9 +84,9 @@ if [ ! -d $data ]; then
 	main=$(ls $repo/.git/refs/heads)
 	git checkout -b $main
 else
-	cd $data
+	cd $data > /dev/null
 	git pull
-	cd -
+	cd - > /dev/null
 fi
 repo=$data
 main=$(ls $repo/.git/refs/heads)
@@ -94,9 +94,10 @@ cd $(dirname $0) > /dev/null
 p=$(pwd)
 cd - > /dev/null
 pushd $repo > /dev/null
+echo $(pwd)
 if [ "$2" == "tags" ]; then
 	git for-each-ref --sort=creatordate --format '%(objectname) %(refname:short)' refs/tags > git.log
-	if [ ! -e git.log ] || [ -z git.log ]; then # fall back when there was no tags
+	if [ ! -e git.log ] || [ ! -s git.log ]; then # fall back when there was no tags
 		git log -p --reverse --since="$checkpoint" | grep "^commit " | cut -d" " -f2 > git.log
 	fi
 else
