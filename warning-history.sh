@@ -96,6 +96,9 @@ cd - > /dev/null
 pushd $repo > /dev/null
 if [ "$2" == "tags" ]; then
 	git for-each-ref --sort=creatordate --format '%(objectname)' refs/tags > git.log
+	if [ -z git.log ]; then # fall back when there was no tags
+		git log -p --reverse --since="$checkpoint" | grep "^commit " | cut -d" " -f2 > git.log
+	fi
 else
 	git log -p --reverse --since="$checkpoint" | grep "^commit " | cut -d" " -f2 > git.log
 fi
