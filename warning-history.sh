@@ -95,7 +95,7 @@ p=$(pwd)
 cd - > /dev/null
 pushd $repo > /dev/null
 if [ "$2" == "tags" ]; then
-	git for-each-ref --sort=creatordate --format '%(objectname)' refs/tags > git.log
+	git for-each-ref --sort=creatordate --format '%(objectname) %(refname:short)' refs/tags > git.log
 	if [ -z git.log ]; then # fall back when there was no tags
 		git log -p --reverse --since="$checkpoint" | grep "^commit " | cut -d" " -f2 > git.log
 	fi
@@ -103,6 +103,8 @@ else
 	git log -p --reverse --since="$checkpoint" | grep "^commit " | cut -d" " -f2 > git.log
 fi
 cat git.log | while read f; do
+	tag=${f/* /}
+	f=${f% *}
 	if [ ! -f "diagnostics/$f/tokei.txt" ]; then
 		git stash
 		git checkout $f
@@ -115,8 +117,10 @@ git stash
 git checkout -f $main
 echo date,warning,warning/file,warning/KLOC> counts.csv
 cat git.log | while read rev; do 
+	tag=${rev/* /}
+	rev=${rev% *}
 	d=$(git log $rev --pretty=format:'%at' --date=iso -- | head -1)
-	echo $d,$(cat diagnostics/$rev/diagnostics.log | grep -v "previously generated" | head -1 | awk '{printf("%d,%d\n", $3, $6)}'),$(cat diagnostics/$rev/tokei.txt | grep " Total" | awk '{print $3}')
+	echo $d,$(cat diagnostics/$rev/diagnostics.log | grep -v "previously generated" | head -1 | awk '{printf("%d,%d\n", $3, $6)}'),$(cat diagnostics/$rev/tokei.txt | grep " Total" | awk '{print $3}'),$tag
 done | sort -t, -n -k1,1 >> counts.csv
 find . -name diagnostics.log | xargs cat | grep "^\#\[Warning" | cut -d: -f1-4 | sort | uniq -c | sort -n
 counts=$(find . -name diagnostics.log | xargs cat | grep "^\#\[Warning" | cut -d: -f1-4 | wc -l)
