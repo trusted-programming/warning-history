@@ -104,24 +104,29 @@ else
 	git log -p --reverse --since="$checkpoint" | grep "^commit " | cut -d" " -f2 > git.log
 fi
 cat git.log | while read f; do
-	tag=${f/* /}
-	f=${f% *}
-	if [ ! -f "diagnostics/$f/tokei.txt" ]; then
+	tag=${f/[^ ]* /}
+	f=${f/ [^ ]*/}
+	if [ ! -f "diagnostics/$f/tokei.txt" ] || [ ! -f "diagnostics/$f/diagnostics.log" ]; then
 		git stash
-		git checkout $f
-		g=$(grep -A1 $f git.log | tail -1)
-		timeout 10m rust-diagnostics --patch $g --confirm --pair --function --single --mixed --location 
-		tokei -t=Rust src > diagnostics/$f/tokei.txt 
+		git checkout -f $f
+		# avoid extra downloads to save disk space 
+		rm -f rust-toolchain
+		g=$(grep -A1 $f git.log | tail -1 | cut -d" " -f1)
+		if [ ! -f "diagnostics/$f/diagnostics.log" ]; then
+			timeout 10m rust-diagnostics --patch $g --confirm --pair --function --single --mixed --location 
+		fi
+		if [ ! -f "diagnostics/$f/tokei.txt" ]; then
+			mkdir -p diagnostics/$f
+			tokei -t=Rust src > diagnostics/$f/tokei.txt 
+		fi
 	fi
 done
-git stash
-git checkout -f $main
-echo date,warning,warning/file,warning/KLOC> counts.csv
+echo date,warning,warning fixed,warning per KLOC> counts.csv
 cat git.log | while read rev; do 
 	tag=${rev/* /}
 	rev=${rev% *}
 	d=$(git log $rev --pretty=format:'%at' --date=iso -- | head -1)
-	echo $d,$(cat diagnostics/$rev/diagnostics.log | grep -v "previously generated" | head -1 | awk '{printf("%d,%d\n", $3, $6)}'),$(cat diagnostics/$rev/tokei.txt | grep " Total" | awk '{print $3}'),$tag
+	echo $d,$(cat diagnostics/$rev/diagnostics.log | grep -v "previously generated" | head -1 | awk '{printf("%d,%d,\n", $3, $8)}'),$(cat diagnostics/$rev/tokei.txt | grep " Total" | awk '{print $3}'),$tag
 done | sort -t, -n -k1,1 >> counts.csv
 find . -name diagnostics.log | xargs cat | grep "^\#\[Warning" | cut -d: -f1-4 | sort | uniq -c | sort -n
 counts=$(find . -name diagnostics.log | xargs cat | grep "^\#\[Warning" | cut -d: -f1-4 | wc -l)
