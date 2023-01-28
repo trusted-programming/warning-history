@@ -126,7 +126,7 @@ cat git.log | while read rev; do
 	tag=${rev/* /}
 	rev=${rev% *}
 	d=$(git log $rev --pretty=format:'%at' --date=iso -- | head -1)
-	echo $d,$(cat diagnostics/$rev/diagnostics.log | grep -v "previously generated" | head -1 | awk '{printf("%d,%d,\n", $3, $8)}'),$(cat diagnostics/$rev/tokei.txt | grep " Total" | awk '{print $3}'),$tag
+	echo $d,$(cat diagnostics/$rev/diagnostics.log | grep -v "previously generated" | head -1 | awk '{printf("%d,%d\n", $3, $8)}'),$(cat diagnostics/$rev/tokei.txt | grep " Total" | awk '{print $3}'),$tag
 done | sort -t, -n -k1,1 >> counts.csv
 find . -name diagnostics.log | xargs cat | grep "^\#\[Warning" | cut -d: -f1-4 | sort | uniq -c | sort -n
 counts=$(find . -name diagnostics.log | xargs cat | grep "^\#\[Warning" | cut -d: -f1-4 | wc -l)
