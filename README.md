@@ -82,6 +82,18 @@ Algorithm Minimize history of warning fixes
 }
 ```
 
+## Crates-IO projects
+
+The following commands can be used to count the number of warnings on crates-io projects:
+```bash
+git clone https://github.com/rust-lang/rust-clippy
+cp lintcheck_crates.toml rust-clippy/lintcheck
+cd rust-clippy
+cargo lintcheck
+```
+At the moment of study, 94735 projects have proper version to be configured.
+Results of analysis are stored under `target/lintcheck`.
+
 ## Some related projects
 
  * https://github.com/trusted-programming/rust-diagnostics
