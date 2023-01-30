@@ -1,0 +1,7 @@
+data*
+diagnostics
+*.bz2
+counts.csv
+*.png
+*.csv
+git.log
