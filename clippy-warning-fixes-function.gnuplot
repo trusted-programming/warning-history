@@ -15,4 +15,3 @@ set boxwidth 1
 set key top right
 set output 'clippy-warning-fixes-function.png'
 plot "clippy-warning-fixes-count-function.csv" using ($1*100/$3):xtic(2) with boxes, "" using 0:($1*100/$3+0.2):(sprintf("%3.1f %",$1*100/$3)) w labels notitle
-# xtic(2):(sprintf("%3.2f",$1))

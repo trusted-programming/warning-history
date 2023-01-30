@@ -1,5 +1,5 @@
 if [ "$1" == "" ]; then
-	data=data
+	data=data3
 	split=split
 else
 	data=$1
@@ -14,6 +14,9 @@ for d in $data/*; do
 	  cd - > /dev/null
   fi
 done
+tail -20 crates-io-warnings.csv | sort -n -k1 -t, -r | sed -e 's/_/-/g' > crates-io.csv
+gnuplot crates-io.gnuplot
+sudo cp crates-io.png /var/www/html
 find $data -name diagnostics.log | xargs cat | grep -v "^There are" | awk -f $split.awk 
 ls *.cs | while read f; do 
 	echo $(grep "^##\[Warning(" $f | wc -l) $f

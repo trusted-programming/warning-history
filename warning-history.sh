@@ -61,41 +61,42 @@
 #   ./clippy-warning-fix.tar.bz2 -- the above warning data in CodeT5 format
 #
 
-case "$3" in
-1) 
-     data=data1
-     cp config.unwrap_used.toml $HOME/.cargo/config
-     break
-     ;;
-2)
-     data=data2
-     cp config.machineapplicable.toml $HOME/.cargo/config
-     break
-     ;;
-3)
-     data=data3
-     cp config.conventions.toml $HOME/.cargo/config
-     break
-     ;;
-4)
-     data=data4
-     cp config.combined.toml $HOME/.cargo/config
-     break
-     ;;
-*)
-     data=data1
-     cp config.unwrap_used.toml $HOME/.cargo/config
-     break
-     ;;
-fi
-
 # default value is the period of the major release cycle in Rust
 checkpoint="30 years ago"
 #checkpoint="12 months ago"
+data=data3
+cp config.conventions.toml $HOME/.cargo/config
 if [ "$2" != "" ]; then
 	if [ "$2" != "tags" ]; then
 		checkpoint="$2"
 	fi
+	case "$3" in
+	1) 
+	     data=data1
+	     cp config.unwrap_used.toml $HOME/.cargo/config
+	     break
+	     ;;
+	2)
+	     data=data2
+	     cp config.machineapplicable.toml $HOME/.cargo/config
+	     break
+	     ;;
+	3)
+	     data=data3
+	     cp config.conventions.toml $HOME/.cargo/config
+	     break
+	     ;;
+	4)
+	     data=data4
+	     cp config.combined.toml $HOME/.cargo/config
+	     break
+	     ;;
+	*)
+	     data=data3
+	     cp config.conventions.toml $HOME/.cargo/config
+	     break
+	     ;;
+	esac
 fi
 hash rust-diagnostics > /dev/null
 if ! [ $? == 0 ]; then
@@ -148,10 +149,14 @@ cat git.log | while read f; do
 		git stash
 		git checkout -f $f
 		# avoid extra downloads to save disk space 
-		rm -f rust-toolchain
+		rm -f rust-toolchain*
+		# export RUSTUP_TOOLCHAIN=$HOME/.rustup/toolchains
+		rustup override set nightly
+		rustup override set 1.67.0
+		rustup default nightly
 		g=$(grep -A1 $f git.log | tail -1 | cut -d" " -f1)
 		if [ ! -f "diagnostics/$f/diagnostics.log" ]; then
-			timeout 10m rust-diagnostics --patch $g --confirm --pair --function --single --mixed --location
+			timeout 10m rust-diagnostics --patch $g --confirm --pair --function --single # --mixed --location
 		fi
 		if [ ! -f "diagnostics/$f/tokei.txt" ]; then
 			mkdir -p diagnostics/$f
