@@ -149,11 +149,10 @@ cat git.log | while read f; do
 		git stash
 		git checkout -f $f
 		# avoid extra downloads to save disk space 
-		rm -f rust-toolchain*
-		# export RUSTUP_TOOLCHAIN=$HOME/.rustup/toolchains
-		rustup override set nightly
-		rustup override set 1.67.0
-		rustup default nightly
+		# rm -f rust-toolchain*
+		# rustup override set nightly
+		# rustup override set 1.67.0
+		# rustup default nightly
 		g=$(grep -A1 $f git.log | tail -1 | cut -d" " -f1)
 		if [ ! -f "diagnostics/$f/diagnostics.log" ]; then
 			timeout 10m rust-diagnostics --patch $g --confirm --pair --function --single # --mixed --location

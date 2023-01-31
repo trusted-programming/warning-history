@@ -5,3 +5,6 @@ counts.csv
 *.png
 *.csv
 git.log
+*.cs
+*.java
+var

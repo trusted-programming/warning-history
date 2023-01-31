@@ -1,5 +1,5 @@
 #!/bin/bsh
-page=var/www/html/rust-diagnostics2.html
+page=../var/www/rust-diagnostics3.html
 echo > $page
 echo "<img src='clippy-warning-fixes-function.png'> <br/>" > $page
 echo "<a href='clippy-warning-fixes-count-function.csv'>warning fixes counts</a>" >> $page

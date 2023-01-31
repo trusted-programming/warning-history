@@ -5,18 +5,19 @@ else
 	data=$1
 	split=split1
 fi
+mkdir var/www/html -p
 for d in $data/*; do
   if [ -f $d/counts.csv ]; then
 	  cd $d > /dev/null
 	  e=$(basename $d)
 	  gnuplot ../../warning-history-LOC.gnuplot
-	  sudo cp warning-history-per-KLOC.png /var/www/html/$e.png
+	  cp warning-history-per-KLOC.png var/www/html/$e.png
 	  cd - > /dev/null
   fi
 done
 tail -20 crates-io-warnings.csv | sort -n -k1 -t, -r | sed -e 's/_/-/g' > crates-io.csv
 gnuplot crates-io.gnuplot
-sudo cp crates-io.png /var/www/html
+cp crates-io.png var/www/html
 find $data -name diagnostics.log | xargs cat | grep -v "^There are" | awk -f $split.awk 
 ls *.cs | while read f; do 
 	echo $(grep "^##\[Warning(" $f | wc -l) $f
@@ -29,12 +30,12 @@ done | sort -n -k1 -r | head -20 | grep clippy | grep -v clippy.cs | grep -v tot
 	sed -e 's/\#\#\[Warning(//g' -e 's/).cs-java.txt.cs//g' -e 's/^ *//g' -e 's/ /,/g' -e 's/_/-/g' -e 's/clippy:://g' \
 	>> clippy-warning-fixes-count-function.csv
 gnuplot clippy-warning-fixes-function.gnuplot
-sudo cp clippy-warning-fixes-function.png /var/www/html
-sudo cp clippy-warning-fixes-count-function.csv /var/www/html
+cp clippy-warning-fixes-function.png var/www/html
+cp clippy-warning-fixes-count-function.csv var/www/html
 cd $data
-sudo sh copy.sh
-sudo sh copy.sh
+sh copy.sh
+sh copy.sh
 cd -
 tar cfj clippy-warning-fixes-function.tar.bz2 clippy-warning-fixes-count-function.csv *.cs *.java
-sudo cp clippy-warning-fixes-function.tar.bz2 /var/www/html
-echo $(ls data/*/diagnostics -dtr | wc -l) projects have been processed
+cp clippy-warning-fixes-function.tar.bz2 var/www/html
+echo $(ls $data/*/diagnostics -dtr | wc -l) projects have been processed
